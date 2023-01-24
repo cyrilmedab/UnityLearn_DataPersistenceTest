@@ -9,18 +9,6 @@ using UnityEditor;
 
 public class MenuUIHandler : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public virtual void StartGame()
     {
         SceneManager.LoadScene(1);
@@ -28,6 +16,8 @@ public class MenuUIHandler : MonoBehaviour
 
     public void ExitGame()
     {
+        HighScoreManager.Instance.SaveHighScore();
+
 #if UNITY_EDITOR
         EditorApplication.ExitPlaymode();
 #else

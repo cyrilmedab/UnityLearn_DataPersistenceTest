@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 
 public class MainManager : MonoBehaviour
 {
@@ -10,13 +11,20 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
+    public PauseUIHandler pauseHandler;
+
     public Text ScoreText;
+    public Text LeaderboardText;
     public GameObject GameOverText;
+    public GameObject NewHighscoreScreen;
+    [SerializeField] private TMP_InputField inputField;
     
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
+    private bool isWaitingForName = false;
+    private string m_PlayerName;
 
     
     // Start is called before the first frame update
@@ -24,7 +32,7 @@ public class MainManager : MonoBehaviour
     {
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
-        
+
         int[] pointCountArray = new [] {1,1,2,2,5,5};
         for (int i = 0; i < LineCount; ++i)
         {
@@ -36,6 +44,7 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        LoadLeaderboard();
     }
 
     private void Update()
@@ -53,9 +62,17 @@ public class MainManager : MonoBehaviour
                 Ball.AddForce(forceDir * 2.0f, ForceMode.VelocityChange);
             }
         }
+        else if (m_Started)
+        {
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                if (PauseUIHandler.isPaused) pauseHandler.ResumeGame();
+                else pauseHandler.PauseGame();
+            }
+        }
         else if (m_GameOver)
         {
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.Space) && !isWaitingForName)
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
@@ -71,6 +88,64 @@ public class MainManager : MonoBehaviour
     public void GameOver()
     {
         m_GameOver = true;
-        GameOverText.SetActive(true);
+
+        if (isHighScore())
+        {
+            NewHighscoreScreen.SetActive(true);
+            isWaitingForName = true;
+            inputField.ActivateInputField();
+            StartCoroutine(WaitingForName());
+        }
+        else
+        {
+            GameOverText.SetActive(true);
+        }
+    }
+
+    private IEnumerator WaitingForName()
+    {
+        while(isWaitingForName)
+        {
+            yield return null;
+        }
+
+        UpdateHighscore();
+        SceneManager.LoadScene(0);
+    }
+
+    public void ReceivePlayerName()
+    {
+        isWaitingForName = false;
+        m_PlayerName = inputField.text;
+    }
+
+    public bool isHighScore()
+    {
+        return m_Points > HighScoreManager.Instance.highScore;
+    }
+
+    public void UpdateHighscore()
+    {
+        HighScoreManager.Instance.highscorerName = m_PlayerName;
+        HighScoreManager.Instance.highScore = m_Points;
+        HighScoreManager.Instance.SaveHighScore();
+        LoadLeaderboard();
+    }
+
+    public void LoadLeaderboard()
+    {
+        if (HighScoreManager.Instance != null)
+        {
+            if(HighScoreManager.Instance.highScore == 0)
+            {
+                LeaderboardText.text = "No highscore yet!";
+            }
+            else
+            {
+                LeaderboardText.text = $"Highscore: " +
+                $" {HighScoreManager.Instance.highScore}  --" +
+                $"  {HighScoreManager.Instance.highscorerName}";
+            }
+        }
     }
 }

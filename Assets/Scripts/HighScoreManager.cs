@@ -7,6 +7,7 @@ using System.IO;
 public class HighScoreManager : MonoBehaviour
 {
     public static HighScoreManager Instance { get; set; }
+    public string highscorerName;
     public int highScore;
 
     private void Awake()
@@ -16,18 +17,21 @@ public class HighScoreManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            LoadHighScore();
         }
     }
 
     [Serializable]
     class HighestScore
     {
+        public string highscorerName;
         public int highScore;
     }
 
     public void SaveHighScore()
     {
         HighestScore data = new HighestScore();
+        data.highscorerName = highscorerName;
         data.highScore = highScore;
 
         string json = JsonUtility.ToJson(data);
@@ -41,6 +45,7 @@ public class HighScoreManager : MonoBehaviour
         {
             string json = File.ReadAllText(path);
             HighestScore data = JsonUtility.FromJson<HighestScore>(json);
+            highscorerName = data.highscorerName;
             highScore = data.highScore;
         }
     }
